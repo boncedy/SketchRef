@@ -1,0 +1,17 @@
+{
+  "categories": [
+    {
+      "id": "black-white",
+      "name": "Black & White"
+    },
+    {
+      "id": "color",
+      "name": "Color"
+    },
+    {
+      "id": "portraits",
+      "name": "Portraits"
+    }
+  ],
+  "images": []
+}
