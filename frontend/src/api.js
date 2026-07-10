@@ -3,7 +3,8 @@
  * Keeping this as the single boundary means new features (e.g. tags,
  * search, multi-user sync) only require changes in one place.
  */
-const BASE = "/api";
+const BASE =
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, options);
