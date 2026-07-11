@@ -25,6 +25,16 @@ export default function Gallery() {
   }, []);
 
   useEffect(() => {
+    const onImageRenamed = (event) => {
+      if (event.detail?.id) {
+        setImages((prev) => prev.map((img) => (img.id === event.detail.id ? event.detail.image : img)));
+      }
+    };
+    window.addEventListener("sketchref:image-renamed", onImageRenamed);
+    return () => window.removeEventListener("sketchref:image-renamed", onImageRenamed);
+  }, []);
+
+  useEffect(() => {
     loadImages(active);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
@@ -37,6 +47,10 @@ export default function Gallery() {
     api.uploadImage(file, category).then((img) => {
       if (active === "all" || active === category) setImages((prev) => [...prev, img]);
     });
+
+  const refreshImages = () => {
+    api.getImages(active).then(setImages).catch((e) => setError(e.message));
+  };
 
   const handleToggleChecked = (image, done) => {
     api
@@ -69,7 +83,8 @@ export default function Gallery() {
         </div>
         <UploadPanel
           categories={categories}
-          defaultCategory={active !== "all" ? active : categories[0]?.id}
+          value={active !== "all" ? active : categories[0]?.id}
+          onCategoryChange={setActive}
           onUpload={handleUpload}
         />
       </div>

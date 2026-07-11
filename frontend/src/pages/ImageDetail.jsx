@@ -8,8 +8,10 @@ export default function ImageDetail() {
   const navigate = useNavigate();
   const user = useUser();
   const [image, setImage] = useState(null);
+  const [displayName, setDisplayName] = useState("");
   const [filename, setFilename] = useState("");
   const [error, setError] = useState(null);
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     api
@@ -21,7 +23,8 @@ export default function ImageDetail() {
           return;
         }
         setImage(found);
-        setFilename(found.originalName.replace(/\.[^/.]+$/, ""));
+        setDisplayName(found.displayName || found.originalName.replace(/\.[^/.]+$/, ""));
+        setFilename(found.displayName || found.originalName.replace(/\.[^/.]+$/, ""));
       })
       .catch((e) => setError(e.message));
   }, [id]);
@@ -35,6 +38,19 @@ export default function ImageDetail() {
   const handleRemove = () => {
     if (!window.confirm("Remove this reference from your list?")) return;
     api.deleteImage(image.id).then(() => navigate("/"));
+  };
+
+  const handleSaveName = async () => {
+    if (!image) return;
+    setSavingName(true);
+    try {
+      const updated = await api.updateImage(image.id, { displayName });
+      setImage(updated);
+      setFilename(updated.displayName || updated.originalName.replace(/\.[^/.]+$/, ""));
+      window.dispatchEvent(new CustomEvent("sketchref:image-renamed", { detail: { id: image.id, image: updated } }));
+    } finally {
+      setSavingName(false);
+    }
   };
 
   if (error) {
@@ -62,7 +78,17 @@ export default function ImageDetail() {
         </div>
 
         <div className="detail__panel">
-          <h1>{image.originalName}</h1>
+          <div className="detail__name-row">
+            <input
+              className="detail__name-input"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Image name"
+            />
+            <button className="detail__save-name" onClick={handleSaveName} disabled={savingName}>
+              {savingName ? "Saving…" : "Save"}
+            </button>
+          </div>
           <p className="detail__meta">
             Added {new Date(image.uploadedAt).toLocaleDateString()}
           </p>

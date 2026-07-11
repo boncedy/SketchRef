@@ -38,7 +38,7 @@ export default function ImageCard({ image, onToggleChecked, onRemove }) {
         ×
       </button>
 
-      <div className="card__label">{image.originalName}</div>
+      <div className="card__label">{image.displayName || image.originalName}</div>
     </div>
   );
 }

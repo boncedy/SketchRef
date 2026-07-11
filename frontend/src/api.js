@@ -7,7 +7,14 @@ const BASE =
   import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 
 async function request(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, options);
+  const headers = new Headers(options.headers || {});
+  const token = localStorage.getItem("sketchref_auth_token");
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const res = await fetch(`${BASE}${path}`, { ...options, headers });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `Request failed: ${res.status}`);
@@ -17,19 +24,34 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  // auth
+  login: (payload) =>
+    request("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  register: (payload) =>
+    request("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  getMe: () => request("/auth/me"),
+  logout: () => request("/auth/logout", { method: "POST" }),
+
   // categories
   getCategories: () => request("/categories"),
   addCategory: (name) =>
     request("/categories", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     }),
   deleteCategory: (id) => request(`/categories/${id}`, { method: "DELETE" }),
 
   // images
-  getImages: (category) =>
-    request(`/images${category && category !== "all" ? `?category=${encodeURIComponent(category)}` : ""}`),
+  getImages: (category) => {
+    const query = category && category !== "all" ? `?category=${encodeURIComponent(category)}` : "";
+    return request(`/images${query}`);
+  },
   uploadImage: (file, category) => {
     const form = new FormData();
     form.append("image", file);
@@ -39,13 +61,11 @@ export const api = {
   updateImage: (id, patch) =>
     request(`/images/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     }),
   setDone: (id, userId, done) =>
     request(`/images/${id}/done`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, done }),
     }),
   deleteImage: (id) => request(`/images/${id}`, { method: "DELETE" }),

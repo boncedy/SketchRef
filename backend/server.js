@@ -25,6 +25,7 @@ const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { v4: uuidv4 } = require("uuid");
 
 const PORT = process.env.PORT || 4000;
@@ -47,11 +48,17 @@ function loadDb() {
         { id: "portraits", name: "Portraits" },
       ],
       images: [],
+      users: [],
+      sessions: [],
     };
     fs.writeFileSync(DB_PATH, JSON.stringify(seed, null, 2));
     return seed;
   }
   const loaded = JSON.parse(fs.readFileSync(DB_PATH, "utf-8"));
+  loaded.categories = loaded.categories || [];
+  loaded.images = loaded.images || [];
+  loaded.users = loaded.users || [];
+  loaded.sessions = loaded.sessions || [];
 
   // Migrate old single-user `checked: boolean` records to the multi-user
   // `doneBy: string[]` shape (a list of user ids who've marked it done).
@@ -74,11 +81,63 @@ function saveDb(db) {
 
 let db = loadDb();
 
+function serializeUser(user) {
+  if (!user) return null;
+  const { password, ...rest } = user;
+  return rest;
+}
+
+function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
+  const derived = crypto.pbkdf2Sync(password, salt, 100000, 64, "sha512");
+  return { salt, hash: derived.toString("hex") };
+}
+
+function verifyPassword(password, user) {
+  const derived = crypto.pbkdf2Sync(password, user.password.salt, 100000, 64, "sha512");
+  return derived.toString("hex") === user.password.hash;
+}
+
+function createSessionForUser(user) {
+  const token = uuidv4();
+  const session = {
+    id: uuidv4(),
+    token,
+    userId: user.id,
+    createdAt: new Date().toISOString(),
+  };
+  db.sessions.push(session);
+  saveDb(db);
+  return { token, session };
+}
+
+function requireAuth(req, res, next) {
+  const authHeader = req.get("authorization") || req.get("x-auth-token") || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : authHeader.trim();
+  const session = db.sessions.find((entry) => entry.token === token);
+  if (!session) {
+    return res.status(401).json({ error: "Authentication required." });
+  }
+  const user = db.users.find((entry) => entry.id === session.userId);
+  if (!user) {
+    return res.status(401).json({ error: "Session expired." });
+  }
+  req.user = user;
+  req.session = session;
+  next();
+}
+
 // --- app -----------------------------------------------------------------
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.use("/api", (req, res, next) => {
+  if (req.path.startsWith("/auth/")) return next();
+  if (req.path.match(/^\/images\/[^/]+\/(file|download)$/)) return next();
+  if (req.method === "PATCH" && req.path.match(/^\/images\/[^/]+$/)) return next();
+  return requireAuth(req, res, next);
+});
 
 // Serve the built frontend (frontend/dist) if it exists, so a single
 // `node server.js` process can run the whole app — no separate frontend
@@ -97,6 +156,59 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage });
+
+// --- auth -------------------------------------------------------------
+
+app.post("/api/auth/register", (req, res) => {
+  const name = req.body.name?.trim();
+  const email = req.body.email?.trim().toLowerCase();
+  const password = req.body.password;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "Name, email, and password are required." });
+  }
+  if (db.users.some((user) => user.email === email)) {
+    return res.status(409).json({ error: "An account with that email already exists." });
+  }
+
+  const user = {
+    id: uuidv4(),
+    name,
+    email,
+    password: hashPassword(password),
+    createdAt: new Date().toISOString(),
+  };
+  db.users.push(user);
+  const { token } = createSessionForUser(user);
+  saveDb(db);
+  res.status(201).json({ user: serializeUser(user), token });
+});
+
+app.post("/api/auth/login", (req, res) => {
+  const email = req.body.email?.trim().toLowerCase();
+  const password = req.body.password;
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required." });
+  }
+
+  const user = db.users.find((entry) => entry.email === email);
+  if (!user || !verifyPassword(password, user)) {
+    return res.status(401).json({ error: "Invalid email or password." });
+  }
+
+  const { token } = createSessionForUser(user);
+  res.json({ user: serializeUser(user), token });
+});
+
+app.get("/api/auth/me", requireAuth, (req, res) => {
+  res.json({ user: serializeUser(req.user) });
+});
+
+app.post("/api/auth/logout", requireAuth, (req, res) => {
+  db.sessions = db.sessions.filter((entry) => entry.id !== req.session.id);
+  saveDb(db);
+  res.json({ ok: true });
+});
 
 // --- categories ------------------------------------------------------
 
@@ -147,6 +259,7 @@ app.post("/api/images", upload.single("image"), (req, res) => {
     id: uuidv4(),
     storedName: req.file.filename,
     originalName: req.file.originalname,
+    displayName: req.body.displayName?.trim() || req.file.originalname.replace(/\.[^/.]+$/, ""),
     category: req.body.category || "uncategorized",
     doneBy: [],
     uploadedAt: new Date().toISOString(),
@@ -161,6 +274,10 @@ app.patch("/api/images/:id", (req, res) => {
   if (!img) return res.status(404).json({ error: "Image not found." });
 
   if (typeof req.body.category === "string") img.category = req.body.category;
+  if (typeof req.body.displayName === "string") {
+    const nextDisplayName = req.body.displayName.trim();
+    img.displayName = nextDisplayName || img.originalName.replace(/\.[^/.]+$/, "");
+  }
 
   saveDb(db);
   res.json(img);
@@ -174,7 +291,8 @@ app.patch("/api/images/:id/done", (req, res) => {
   const img = db.images.find((i) => i.id === req.params.id);
   if (!img) return res.status(404).json({ error: "Image not found." });
 
-  const { userId, done } = req.body;
+  const { done } = req.body;
+  const userId = req.user?.id || req.body.userId;
   if (!userId) return res.status(400).json({ error: "userId is required." });
 
   const without = img.doneBy.filter((u) => u !== userId);
@@ -207,7 +325,7 @@ app.get("/api/images/:id/download", (req, res) => {
   if (!img) return res.status(404).end();
 
   const ext = path.extname(img.storedName);
-  const requested = (req.query.filename || img.originalName || "drawing-reference").toString();
+  const requested = (req.query.filename || img.displayName || img.originalName || "drawing-reference").toString();
   const safeBase = requested.replace(/[^a-z0-9-_ ]/gi, "").trim() || "drawing-reference";
   const finalName = safeBase.toLowerCase().endsWith(ext.toLowerCase()) ? safeBase : `${safeBase}${ext}`;
 

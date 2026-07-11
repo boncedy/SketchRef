@@ -1,9 +1,14 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export default function UploadPanel({ categories, defaultCategory, onUpload }) {
+export default function UploadPanel({ categories, value, onCategoryChange, onUpload }) {
   const fileRef = useRef(null);
-  const [category, setCategory] = useState(defaultCategory || categories[0]?.id || "uncategorized");
+  const [category, setCategory] = useState(value || categories[0]?.id || "uncategorized");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const nextValue = value && value !== "all" ? value : categories[0]?.id || "uncategorized";
+    setCategory(nextValue);
+  }, [value, categories]);
 
   const handleFiles = async (files) => {
     if (!files || !files.length) return;
@@ -18,9 +23,15 @@ export default function UploadPanel({ categories, defaultCategory, onUpload }) {
     }
   };
 
+  const handleCategoryChange = (e) => {
+    const nextCategory = e.target.value;
+    setCategory(nextCategory);
+    if (onCategoryChange) onCategoryChange(nextCategory);
+  };
+
   return (
     <div className="upload-panel">
-      <select value={category} onChange={(e) => setCategory(e.target.value)}>
+      <select value={category} onChange={handleCategoryChange}>
         {categories.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name}
