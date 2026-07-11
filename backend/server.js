@@ -132,11 +132,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/api", (req, res, next) => {
-  if (req.path.startsWith("/auth/")) return next();
-  if (req.path.match(/^\/images\/[^/]+\/(file|download)$/)) return next();
-  if (req.method === "PATCH" && req.path.match(/^\/images\/[^/]+$/)) return next();
-  return requireAuth(req, res, next);
+app.use("/api", (_req, _res, next) => {
+  // The gallery is intentionally public. Uploads, categories, and image
+  // updates should work without a login or session.
+  next();
 });
 
 // Serve the built frontend (frontend/dist) if it exists, so a single
@@ -317,19 +316,26 @@ app.delete("/api/images/:id", (req, res) => {
 app.get("/api/images/:id/file", (req, res) => {
   const img = db.images.find((i) => i.id === req.params.id);
   if (!img) return res.status(404).end();
-  res.sendFile(path.join(UPLOADS_DIR, img.storedName));
+
+  const filePath = path.join(UPLOADS_DIR, img.storedName);
+  if (!fs.existsSync(filePath)) return res.status(404).end();
+
+  res.sendFile(filePath);
 });
 
 app.get("/api/images/:id/download", (req, res) => {
   const img = db.images.find((i) => i.id === req.params.id);
   if (!img) return res.status(404).end();
 
+  const filePath = path.join(UPLOADS_DIR, img.storedName);
+  if (!fs.existsSync(filePath)) return res.status(404).end();
+
   const ext = path.extname(img.storedName);
   const requested = (req.query.filename || img.displayName || img.originalName || "drawing-reference").toString();
   const safeBase = requested.replace(/[^a-z0-9-_ ]/gi, "").trim() || "drawing-reference";
   const finalName = safeBase.toLowerCase().endsWith(ext.toLowerCase()) ? safeBase : `${safeBase}${ext}`;
 
-  res.download(path.join(UPLOADS_DIR, img.storedName), finalName);
+  res.download(filePath, finalName);
 });
 
 // Anything that isn't an /api/* route falls through to the frontend, so

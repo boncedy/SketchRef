@@ -8,8 +8,6 @@ const BASE =
 
 async function request(path, options = {}) {
   const headers = new Headers(options.headers || {});
-  const token = localStorage.getItem("sketchref_auth_token");
-  if (token) headers.set("Authorization", `Bearer ${token}`);
   if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }

@@ -1,6 +1,4 @@
-import { api } from "../api.js";
 import { useUser } from "../UserContext.js";
-import { clearUser } from "../user.js";
 
 export default function Navbar({ categories, active, onSelect, onAddCategory }) {
   const user = useUser();
@@ -8,19 +6,6 @@ export default function Navbar({ categories, active, onSelect, onAddCategory }) 
   const handleAdd = () => {
     const name = window.prompt("New category name (e.g. Anatomy, Animals):");
     if (name?.trim()) onAddCategory(name.trim());
-  };
-
-  const handleSwitchUser = async () => {
-    const confirmed = window.confirm(`Switch away from "${user.name}"? You'll be asked to sign in again.`);
-    if (!confirmed) return;
-
-    try {
-      await api.logout();
-    } catch {
-      // ignore logout errors and just clear local session state
-    }
-    clearUser();
-    window.location.reload();
   };
 
   return (
@@ -48,9 +33,9 @@ export default function Navbar({ categories, active, onSelect, onAddCategory }) 
           + category
         </button>
       </div>
-      <button className="navbar__user" onClick={handleSwitchUser} title="Switch user">
+      <div className="navbar__user" title="Public gallery">
         {user.name}
-      </button>
+      </div>
     </nav>
   );
 }

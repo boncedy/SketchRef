@@ -17,9 +17,9 @@ reference pictures, tracking which ones they've already drawn.
    Portraits). Categories are user-defined, not hardcoded — "All" is always
    available.
 3. **Add a category** from the nav bar at any time.
-4. **Create an account or sign in** with an email/password pair. The app keeps
-   a browser session for the signed-in user so their own done list and
-   browsing state persist across refreshes.
+4. **Use the gallery immediately as a public space** — anyone can open it,
+   browse the shared reference library, and add new pictures without creating
+   an account or signing in.
 5. **Mark a picture as done / not done** with a single click on its
    thumbnail, without leaving the grid. Done pictures are visually distinct
    (a red pencil-style checkmark). **Done state is tracked per person** —
@@ -46,18 +46,16 @@ reference pictures, tracking which ones they've already drawn.
 - The app can be shared with other people (e.g. over a Cloudflare Tunnel —
   see `SHARING.md`). Everyone who opens it shares the same picture library
   and categories.
-- Each person can create a local account with an email/password pair and a
-  display name. The browser keeps an auth token so the same user can sign in
-  again later without re-entering their details, while the backend still uses
-  the user id to keep each person's done list separate.
-- Anyone can add pictures, add categories, or remove pictures — there's no
-  per-person permission system in v1. See `AGENTS.md` if that needs to
-  change later.
+- The gallery is public by default. Anyone can browse, add pictures, add
+  categories, or remove pictures — there's no per-person permission system in
+  v1. See `AGENTS.md` if that needs to change later.
+- The app still keeps track of each person’s done state by using a local
+  browser-side identifier so their personal markups remain visible on refresh,
+  but there is no account sign-in flow.
 
 ## Non-functional requirements
 
-- **Runs entirely locally** — no cloud service is required to create an
-  account or use the gallery.
+- **Runs entirely locally** — no cloud service is required to use the gallery.
 - **Data persists** across restarts (JSON file + files on disk), so closing
   the browser or restarting the server doesn't lose progress.
 - **Extensible**: the codebase should make it straightforward to add tags,

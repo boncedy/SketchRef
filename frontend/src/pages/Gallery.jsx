@@ -79,7 +79,7 @@ export default function Gallery() {
         <div className="toolbar__count">
           {images.length} reference{images.length === 1 ? "" : "s"}
           {" · "}
-          {doneCount} done by you
+          {doneCount} marked done
         </div>
         <UploadPanel
           categories={categories}

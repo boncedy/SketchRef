@@ -13,5 +13,76 @@
       "name": "Portraits"
     }
   ],
-  "images": []
+  "images": [
+    {
+      "id": "e0da0d70-538b-4e8d-83e1-57e54d71bd13",
+      "storedName": "8415b256-50b8-4bc8-b03c-8695eead0a48.jpg",
+      "originalName": "685acf1167a76f972c7412ad_733733846_12307-3.jpg",
+      "displayName": "Butterfly-sketch",
+      "category": "black-white",
+      "doneBy": [],
+      "uploadedAt": "2026-07-11T09:54:48.579Z"
+    },
+    {
+      "id": "86053622-3bbf-4d4d-a81d-4ccbe86addc3",
+      "storedName": "6c6a83a3-f7d8-4677-bb69-3ae51b2e0699.webp",
+      "originalName": "hachiware-chiikawa-characters-820x1024-1.webp",
+      "displayName": "Hachiware",
+      "category": "color",
+      "doneBy": [],
+      "uploadedAt": "2026-07-11T09:54:52.491Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "90057efd-05cc-4d4d-b47e-8401aea68e02",
+      "name": "boncedy",
+      "email": "boncedy@gmail.com",
+      "password": {
+        "salt": "c3f86a7fee2e0fbb3806c32bdd55c017",
+        "hash": "8428409ff0e1176112e904dec3be467c04cc0648bd2572adc40bdd4540f7ac85e55f0e2dac554c818e47fe672e46ca46eec97a5740142f8adb494a2666193bc2"
+      },
+      "createdAt": "2026-07-10T23:46:32.079Z"
+    },
+    {
+      "id": "1a35ffaf-29dc-4ad0-9f44-89c36251640b",
+      "name": "ball",
+      "email": "skibidi@sigma.com",
+      "password": {
+        "salt": "19127109d3e4d5713f047340ff0d1ae8",
+        "hash": "203cd69200db7b87a330ae57e0200a030df46a4affc3e6e7dca67f937ba0eb911f45311197dc9e8d5f4bae3df82730dcc4b4c6778018ef76563d8583947f6c48"
+      },
+      "createdAt": "2026-07-10T23:47:20.827Z"
+    },
+    {
+      "id": "07e23bc6-0659-42cc-97e8-c635d6851c4e",
+      "name": "admin",
+      "email": "admin@test.com",
+      "password": {
+        "salt": "14422205bde38948754cb7c6c4fd98c7",
+        "hash": "474d55ba287b7b6bada8c9de0ed15a845c35a8d8d4c97cca48a0d32051c8543f2c6ba67797c5c53fc24b21dec6e3d6850ff12bfead524490e58d3c64f5b7190e"
+      },
+      "createdAt": "2026-07-11T00:05:02.305Z"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "54fb108b-0764-45ba-aabe-5a4f7a51c451",
+      "token": "d3fe1133-50ce-4c5d-b29b-972cfcdde60e",
+      "userId": "1a35ffaf-29dc-4ad0-9f44-89c36251640b",
+      "createdAt": "2026-07-10T23:47:37.218Z"
+    },
+    {
+      "id": "9fb0f987-7987-4141-bc40-197d9a6a1ab6",
+      "token": "91493367-fd22-4de8-b783-732c48ef9aec",
+      "userId": "1a35ffaf-29dc-4ad0-9f44-89c36251640b",
+      "createdAt": "2026-07-10T23:55:18.491Z"
+    },
+    {
+      "id": "33fa0f38-2ac0-4720-9436-cc14822da661",
+      "token": "48c2b838-098d-439e-9ffb-cb23ca5723f2",
+      "userId": "07e23bc6-0659-42cc-97e8-c635d6851c4e",
+      "createdAt": "2026-07-11T00:05:02.305Z"
+    }
+  ]
 }
